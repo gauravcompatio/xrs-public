@@ -1,0 +1,265 @@
+<script
+        src="https://code.jquery.com/jquery-3.4.1.min.js"
+        integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
+        crossorigin="anonymous">
+</script>
+{% assign xrsenabled = shop.metafields["global"]["XRSExtension"] %}
+<script async src="{{shop.metafields["global"]["CompatioJS"]}}"></script>
+<script>
+  window.compatioConfig = window.compatioConfig || {};
+  window.compatioConfig.gmsMap = {{shop.metafields["shop"]["gmsMap"]}}
+  window.compatioConfig.compatioApiKey = {{shop.metafields["global"]["CompatioAPIKey"]}};
+  window.compatioConfig.locale = 'en-US';
+  window.compatioConfig.shopify={
+    apiEndpointUrl: "https://{{shop.permanent_domain}}/api/graphql",
+    baseUrl: "https://{{shop.permanent_domain}}",
+    urlSuffix: '',
+    shopifyStorefrontAccessToken: "{{shop.metafields["global"]["AccessToken"]}}",
+    merchantKey: "{{shop.metafields["global"]["MerchantKey"]}}",
+    targetGraph:"{{shop.metafields["global"]["TargetGraph"]}}",
+    maximumProducts:50,
+    maximumCategories:5
+  };
+  window.compatioConfig.compatibleProducts = {
+    productSku: "{{product.selected_or_first_available_variant.id}}",
+    productName: `{{product.title}}`,
+    variantTitle: `{{product.selected_or_first_available_variant.title}}`,
+    productImage: `https:{{product.featured_media | img_url}}`,
+    productType: `{{product.type}}`,
+    price: {{product.selected_or_first_available_variant.price}}/100,
+    compatAtPrice: `{{product.selected_or_first_available_variant.compatAtPrice | money }}`,
+    isProductSkuRandom: false,
+    productsPerPage: 12,
+    isPreloadEcommerceDataEnabled: false,
+    showAddToCart:true,
+    methods: { handleChangeProductSku : function(productSku) {} },
+      callbacks: {  },
+        backingData : [
+          { name: '20 lb Dacron', variantId: '34368719814788' },
+          { name: '30 lb Dacron', variantId: '34368719847556' },
+        ] 
+          };
+
+          const prod= `{{product.title}}`;
+          {% if product.variants.size > 1 %}
+          const variantName = ` : {{current_variant.title }}`;
+          {% else %}
+          const variantName= $("select[id^='SingleOptionSelector-']").val() === undefined ? '' : ': '+$("select[id^='SingleOptionSelector-']").val();
+          {% endif %}
+          
+          const prodtype= `{{product.type}}`;
+          $(".product-single__title").after( `<p type='hidden' id='prodtype' hidden='true' value=${prodtype}>{{product.type}}</p>` );
+          $(".product-single__title").after( "<p><span data-xrs-compatible-with></span></p>" );
+          if ($("span[id^='AddToCartText-']").text().trim() !="Sold Out") {
+          	$(".product-tabs").before( `<p id="bundlersection"><span data-xrs-smart-bundler></span></p>`);           
+          	$(".add-to-cart").after(`<p id="anchor"><span data-xrs-anchor></span></p>`);
+          }
+          
+  $(window).on('load',function(){
+     const mergedName = "All of these products will work with your selected <b>"+prod+variantName+"</b> ";
+     const hashString = document.location.hash.substr(1).split("&").map(v => v.split("="))
+     .reduce( (pre, [key, value]) => ({ ...pre, [key]: value }), {} ); 
+
+  setTimeout(function(){
+    $("#xrs-text").html(mergedName);
+    $("div.xrs-categories > div:nth-child(1)").trigger('click');  
+    let xrs =''
+    if ($("div.xrs-categories").length > 0) {
+      $("#anchor").show();
+      const xrsUserId = localStorage.getItem('compatio-xrs-anonymous-id');
+      $(".add-to-cart").before(`<input type='hidden' name='properties[_xrsUserId]' value=${xrsUserId}>`);
+      $("#xrsAddtoCart > form > input[name='properties[_xrsUserId]']").attr('value',`${xrsUserId}`);
+    }
+
+    if(hashString !=='' && hashString.hasOwnProperty('compatibleWith')){
+      const baseItemId = hashString.sourceVariantID;
+      xrs= 'recommendedItem';
+      const xrsUserId = localStorage.getItem('compatio-xrs-anonymous-id');
+      $(".add-to-cart").before(`<input type='hidden' name='properties[_xrsUserId]' value=${xrsUserId}>`);
+      $(".add-to-cart").before(`<input type='hidden' name='properties[_baseItemId]' value=${baseItemId}>`);
+      $(".add-to-cart").before(`<input type='hidden' name='properties[_parentItemId]' value=${baseItemId}>`);
+      $(".add-to-cart").before(`<input type='hidden' name='properties[_itemSource]' value='XRS'>`);
+
+      if ($('#xrs').length > 0)
+        $('#xrs').val(xrs);
+      else {
+        $("#xrsAddtoCart > form > input[name='utf8']").after(`<input id='xrs' type='hidden' name='properties[_xrs]' value=${xrs}>`)  
+      }   
+    }         
+  },
+   2500
+ );
+});
+
+  $('.btn.btn--full.add-to-cart').click(function(){
+
+    // getting cart details here and check if parent already present
+
+    const el = document.getElementById("xrs-bundle");
+    if(el !==null){
+      el.click();
+      window.scrollTo(0,0);
+      const currentVariantName =$('#xrs-parent-name').text();
+      let currentprice =$("span[id^='ProductPrice-']").text();
+      const dataSectionId= $('#xrs-continue').attr('parentproductsku');
+      let qty= $("#Quantity-{{ section_id }}").val();
+       qty = parseInt(qty);
+      if(qty > 1){
+        $('div.xrs-product__success-message > p').append(` (${qty})`);
+        const price = parseFloat($('#xcs-parent-price > span > span').text().substring(1)).toFixed(2);
+        currentprice= `$${parseFloat(price*qty).toFixed(2)}`;
+      }
+
+      const xrsUserId = $('#xrs-continue').attr('xrsuserid');
+      const dataProductUrl= '';
+      const dataProductHandle= '{{product.handle}}';
+      if(currentVariantName !== '')
+      $('#xcs-parentname').text(currentVariantName); 
+      $('#xcs-parent-price > span > span').text(currentprice); 
+      $("#xrsAddtoCart > form > input[name='properties[_itemSource]']").attr('value','XCS');
+      addProducts(dataSectionId,dataProductUrl,dataProductHandle,xrsUserId);
+      return true;
+    }
+    else{
+      setTimeout(function() {$('span.cart-link').click();},1500);
+      return true;
+    }
+  });
+
+  $('.product-section').on('click', '.xrsbutton', function(){
+    const cat= $('div.xrs-category.xrs-category--active > div.xrs-category__name').text();
+    const isReelCategory = cat === 'Reels';
+    if ($(this).attr('id').includes('AddToCart-')){
+      //if ($(this).attr('id').includes('AddToCart-')){
+      const dataSectionId= $(this).attr('data-section-id');
+      const dataProductUrl= $(this).attr('data-product-url');
+      const dataProductHandle= $(this).attr('data-product-handle');
+      const xrsUserId = $(this).attr('data-userid');
+      const baseItemId = $(this).attr('data-baseitemid');
+      $("#xrsAddtoCart > form > input[name='properties[_itemSource]']").attr('value','XRS');
+      addProducts(dataSectionId,dataProductUrl,dataProductHandle,xrsUserId);
+      if (isReelCategory === false ){
+        setTimeout(function() {$('span.cart-link').click();},1500);
+        $('#xrsAddtoCart > form').trigger('submit');
+      }
+    }
+  });
+
+  $('.product-section').on('click', '#xrs-smart-bundler', function(){
+  
+    const dataSectionId= $(this).attr('parentproductid');
+    const xrsUserId = $('#xrs-continue').attr('xrsuserid');
+    const isReelAdded = $(this).attr('isreeladded');
+    addProducts(dataSectionId,'','',xrsUserId);
+    const bundlerproductid = $(this).attr('bundlerproductid');
+    //mixpanel.track("Bundler Cart", {"product-bundled": bundlerproductids });
+    $("#xrsAddtoCart > form > input[name='utf8']").after(`<input type='hidden' name='id[]' value='${bundlerproductid}'>`);
+    $("#xrsAddtoCart > form > input[name='properties[_itemSource]']").attr('value','Bundler');
+    if(isReelAdded ==="true")
+    {
+      window.scrollTo(0,0);
+      return true;
+    }
+    else{
+      $('#xrsAddtoCart > form').trigger('submit');
+      setTimeout(function() {$('span.cart-link').click();},1500); 
+    }
+
+  });
+
+  $('.product-section').on('click', '.close', function(){
+    const productList =  $('#xrs-continue').attr('productsadded') === ' ' ? [] : $('#xrs-continue').attr('productsadded').split(',');
+    if(productList.length > 0) {
+      addToCartFromCrossSeller();
+    }
+    else{
+      setTimeout(function() {$('span.cart-link').click();},1500); 
+    }
+  });
+
+  $('.product-section').on('click', '#xrs-continue', function(){
+    const productList =  $('#xrs-continue').attr('productsadded') === ' ' ? [] : $('#xrs-continue').attr('productsadded').split(',');
+    if(productList.length > 0) {
+      addToCartFromCrossSeller();
+    }
+    else{
+      setTimeout(function() {$('span.cart-link').click();},1500); 
+    }
+  });
+
+  const  addProducts=(dataSectionId,dataProductUrl,dataProductHandle,xrsUserId)=> {
+    $("#xrsAddtoCart > form > input[name='id[]']").remove();
+    $("#xrsAddtoCart > form > input[name='properties[_baseItemId]']").remove();
+    $("#xrsAddtoCart > form > input[class='backing'").remove();
+    $("#xrsAddtoCart").attr('data-section-id',dataSectionId);
+    $("#xrsAddtoCart").attr('data-product-handle',dataProductHandle);
+    $("#xrsAddtoCart").attr('data-product-url',dataProductUrl);
+    $("#xrsAddtoCart > form").attr('id',`AddToCartForm-${dataSectionId}`);
+    $("#xrsAddtoCart > form > .xrsbutton").attr('id',`AddToCart-${dataSectionId}`);  
+    $("#xrsAddtoCart > form > input[name='utf8']").after(`<input type='hidden' name='id[]' value='${dataSectionId}'>`);
+    $("#xrsAddtoCart > form > input[name='utf8']").after(`<input type='hidden' name='properties[_baseItemId]' value=${dataSectionId}>`)  ;
+  }
+
+
+  const addToCartFromCrossSeller=()=>{
+    const btnName = $('#xrs-continue').text().trim();
+    const IsReelAdded = $('#xrs-continue').attr('isreeladded');
+    if(btnName === 'Add to Cart'  && IsReelAdded ==='true'){
+      const additionalOptions = JSON.parse($('#xrs-continue').attr('additionaloptions'));
+      const BackingItem = $('#xrs-continue').attr('backingproduct'); 
+      if(BackingItem !== ' ' && additionalOptions !== ' ')
+      $("#xrsAddtoCart > form > input[name='utf8']").after(`<input type='hidden' name='id[]' value='${BackingItem}'>`);
+      $("#xrsAddtoCart > form > input[name='utf8']").after(`<input type='hidden' class='backing' name='properties[_backing_option]' value='${additionalOptions.backing_option}'>`);
+      $("#xrsAddtoCart > form > input[name='utf8']").after(`<input type='hidden' class='backing' name='properties[_lefthand_righthand]' value='${additionalOptions.lefthand_righthand}'>`);
+      $("#xrsAddtoCart > form > input[name='utf8']").after(`<input type='hidden' class='backing' name='properties[_install_fly_line]' value='${additionalOptions.install_fly_line}'>`);
+      $('#xrsAddtoCart > form').trigger('submit');
+      setTimeout(function() {$('span.cart-link').click();},2000);     
+    }
+    else{
+      $("#xrsAddtoCart > form > input[name='id[]']").remove();
+      $("#xrsAddtoCart > form > input[name='properties[_baseItemId]']").remove();
+      $("#xrsAddtoCart > form > input[class='backing'").remove();
+
+      const productList =  $('#xrs-continue').attr('productsadded') === ' ' ? [] : $('#xrs-continue').attr('productsadded').split(',');
+      if(productList.length > 0) {
+        productList.forEach(variantID=>{
+          $("#xrsAddtoCart > form > input[name='utf8']").after(`<input type='hidden' name='id[]' value='${variantID}'>`);
+        });
+      } 
+    }
+    if(IsReelAdded ==='false'){
+      $('#xrsAddtoCart > form').trigger('submit');
+      setTimeout(function() {$('span.cart-link').click();},2000);     
+    }
+  }
+
+  console.log($("span[id^='AddToCartText-']").text().trim()=="Sold Out")
+</script>
+
+{% if xrsenabled == "true" %}
+<span data-xrs-compatible-products></span>
+{% endif %}                                      
+
+<div class="shopify-section" 
+     id="xrsAddtoCart"
+     itemscope
+     itemtype="http://schema.org/Product" 
+     data-section-id="24743812071488"
+     data-section-type="product-template" 
+     data-product-handle="trout-lt" 
+     data-product-url="https://www.mrfc.com/collections/fly-rods-blanks-sale/products/winston-nimbus-fly-rod?variant=24743812071488"
+     >
+  <form method="post" 
+        id="AddToCartForm-24743812071488" 
+        action="/cart/add" 
+        class="xrs-product_add-to-cart
+               product-single_form"
+        accept-charset="UTF-8"
+        enctype="multipart/form-data">                                                             
+    <input type="hidden" name="form_type" value="product">
+    <input type="hidden" name="utf8" value="✓">
+    <input type='hidden' name='properties[_itemSource]' value=''>
+    <input type='hidden' name='properties[_xrsUserId]' value=''>
+    <input type="submit" id="AddToCart-24743812071488" class="xrsbutton btn btn--full add-to-cart" value="Add to cart" style="visibility:hidden">
+  </form>
+</div>
