@@ -1,0 +1,37 @@
+
+/*Step 1 - Follow this step only if your theme has cart drawer enabled-
+Open theme.js or theme.js.liquid and find  "Shopify.getCart(function(cart)"
+and find below condition there
+
+comment line - _this.drawer.open(); 
+
+          if (openDrawer === true) {
+            //_this.drawer.open();
+          }
+		  
+*/
+
+
+/* Step 2 - Must follow - In the same file ( theme.js / theme.js.liquid depending on your theme) find _onSelectChange method 
+
+Put the below code at the end of this method,
+to handle the variant change in product details page
+
+ const productName = $(".product-single__title").text()
+      const mergedName = "All of these products will work with your selected <b>"+productName+": "+variant.title+"</b> "; 
+       $("#xrs-text").html(mergedName);
+       $("#xrs-smart-bundler").attr('parentproductid',variant.id); 
+       $("#xrs-parent-name").html(variant.name);
+         if ($("span[id^='AddToCartText-']").text().trim() =="Sold Out") {
+          	$("#bundlersection").hide();           
+          }
+        else{
+            	$("#bundlersection").show();           
+        }
+      var currentprice = variant.price;
+        window.compatioConfig.compatibleProducts.methods.handleChangeProductSku(`${variant.id}`);
+        window.compatioConfig.compatibleProducts.methods.handleChangeVariantId(`${variant.id}`,variant.price/100);
+
+
+
+*/
