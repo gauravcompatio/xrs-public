@@ -12,7 +12,7 @@ comment line - _this.drawer.open();
 */
 
 
-/* Step 2 - Must follow - In the same file ( theme.js / theme.js.liquid depending on your theme) find _onSelectChange method 
+/* Step 2 - Must follow - In the same file ( theme.js / theme.js.liquid depending on your theme) find -> _onSelectChange: function() { <- method 
 
 Put the below code at the end of this method,
 to handle the variant change in product details page
