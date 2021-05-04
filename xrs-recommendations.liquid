@@ -31,6 +31,7 @@
     isProductSkuRandom: false,
     productsPerPage: 12,
     isPreloadEcommerceDataEnabled: false,
+    isProductSpecificDC: false,
     showAddToCart:true,
     methods: { handleChangeProductSku : function(productSku) {} },
       callbacks: {  },
@@ -40,6 +41,16 @@
         ] 
           };
 
+
+          window.compatioConfig.compatibleProducts.dcConfig = {
+            title:"Build an Outfit from this product",
+            description:"Browse compatible rods, reels, lines, leaders and other accessories",
+            imageUrl:"https://cdn.shopify.com/s/files/1/0150/8042/3488/files/mrfc.jpg?v=1619597079"
+          };
+          window.compatioConfig.dcColorConfig = {
+            colorCombination:"green"
+          };
+  	  window.compatioConfig.compatibleProducts.variantMap= []; 
           const prod= `{{product.title}}`;
           {% if product.variants.size > 1 %}
           const variantName = ` : {{current_variant.title }}`;
@@ -48,12 +59,22 @@
           {% endif %}
           
           const prodtype= `{{product.type}}`;
-          $(".product-single__title").after( `<p type='hidden' id='prodtype' hidden='true' value=${prodtype}>{{product.type}}</p>` );
-          $(".product-single__title").after( "<p><span data-xrs-compatible-with></span></p>" );
+          $(".xrs_compatibility_with").after( `<p type='hidden' id='prodtype' hidden='true' value=${prodtype}>{{product.type}}</p>` );
+          $(".xrs_compatibility_with").after( `<p><span data-xrs-compatible-with></span></p>` );
           if ($("span[id^='AddToCartText-']").text().trim() !="Sold Out") {
-          	$(".product-tabs").before( `<p id="bundlersection"><span data-xrs-smart-bundler></span></p>`);           
-          	$(".add-to-cart").after(`<p id="anchor"><span data-xrs-anchor></span></p>`);
+          	// $(".product-tabs").before(`<p id="bundlersection"><span data-xrs-smart-bundler></span></p>`);           
+          	//$(".add-to-cart").after(`<p><span data-dc-anchor class="data-dc-anchor"></span></p>`);
           }
+          $(".xrs_compatibility_with").remove(); 
+          
+          $(".data-dc-anchor").click(function(){  
+            if(window.compatioConfig.dcColorConfig.colorCombination != ''){
+                $(".dc-build-anchor").addClass(window.compatioConfig.dcColorConfig.colorCombination);
+              }
+         	 $("html, body").animate({ scrollTop: 0 }, "fast");
+          	$( ".dc-build-anchor" ).appendTo( $( "body" ) );  
+              
+          });
           
   $(window).on('load',function(){
      const mergedName = "All of these products will work with your selected <b>"+prod+variantName+"</b> ";
@@ -66,6 +87,9 @@
     let xrs =''
     if ($("div.xrs-categories").length > 0) {
       $("#anchor").show();
+      if($(".dc-build-anchor-a").length === 0){
+        $(".data-xrs-anchor").show();
+     }
       const xrsUserId = localStorage.getItem('compatio-xrs-anonymous-id');
       $(".add-to-cart").before(`<input type='hidden' name='properties[_xrsUserId]' value=${xrsUserId}>`);
       $("#xrsAddtoCart > form > input[name='properties[_xrsUserId]']").attr('value',`${xrsUserId}`);
@@ -126,7 +150,7 @@
     }
   });
 
-  $('.product-section').on('click', '.xrsbutton', function(){
+  $('.template-product').on('click', '.xrsbutton', function(){
     const cat= $('div.xrs-category.xrs-category--active > div.xrs-category__name').text();
     const isReelCategory = cat === 'Reels';
     if ($(this).attr('id').includes('AddToCart-')){
@@ -145,7 +169,7 @@
     }
   });
 
-  $('.product-section').on('click', '#xrs-smart-bundler', function(){
+  $('.template-product').on('click', '#xrs-smart-bundler', function(){
   
     const dataSectionId= $(this).attr('parentproductid');
     const xrsUserId = $('#xrs-continue').attr('xrsuserid');
@@ -167,7 +191,7 @@
 
   });
 
-  $('.product-section').on('click', '.close', function(){
+  $('.template-product').on('click', '.close', function(){
     const productList =  $('#xrs-continue').attr('productsadded') === ' ' ? [] : $('#xrs-continue').attr('productsadded').split(',');
     if(productList.length > 0) {
       addToCartFromCrossSeller();
@@ -177,7 +201,7 @@
     }
   });
 
-  $('.product-section').on('click', '#xrs-continue', function(){
+  $('.template-product').on('click', '#xrs-continue', function(){
     const productList =  $('#xrs-continue').attr('productsadded') === ' ' ? [] : $('#xrs-continue').attr('productsadded').split(',');
     if(productList.length > 0) {
       addToCartFromCrossSeller();
@@ -185,6 +209,36 @@
     else{
       setTimeout(function() {$('span.cart-link').click();},1500); 
     }
+  });
+
+$('.template-product').on('click', '#addoutfittocart', function(){
+    
+    const productList =  $('#addoutfittocart').attr('productsadded') === ' ' ? [] : $('#addoutfittocart').attr('productsadded').split(',');
+    if(productList.length > 0) {
+      
+      $("#xrsAddtoCart > form > input[name='id[]']").remove();
+      $("#xrsAddtoCart > form > input[name='properties[_baseItemId]']").remove();
+      $("#xrsAddtoCart > form > input[class='backing'").remove();
+      
+      const xrsUserId = $('#addoutfittocart').attr('data-userid');
+      $("#xrsAddtoCart > form > input[name='properties[_xrsUserId]']").attr('value',`${xrsUserId}`);
+      const reelsOptions = $('#addoutfittocart').attr('additionaloptions') === ' ' ? [] : JSON.parse($('#addoutfittocart').attr('additionaloptions'));
+      if(reelsOptions !== undefined && reelsOptions.length > 0) {
+      $("#xrsAddtoCart > form > input[name='utf8']").after(`<input type='hidden' class='backing' name='properties[_backing_option]' value='${reelsOptions.backing_option}'>`);
+      $("#xrsAddtoCart > form > input[name='utf8']").after(`<input type='hidden' class='backing' name='properties[_lefthand_righthand]' value='${reelsOptions.lefthand_righthand}'>`);
+      $("#xrsAddtoCart > form > input[name='utf8']").after(`<input type='hidden' class='backing' name='properties[_install_fly_line]' value='${reelsOptions.install_fly_line}'>`);
+      }
+       
+        productList.forEach(variantID=>{
+          $("#xrsAddtoCart > form > input[name='utf8']").after(`<input type='hidden' name='id[]' value='${variantID}'>`);
+        });
+        //$('#xrsAddtoCart > form').trigger('submit');
+        //$('.popup-overlay').attr("visibility","hidden");
+      $(".add-to-cart").before(`<input type='hidden' name='properties[_itemSource]' value='SmartBuilder'>`);
+      $('#xrsAddtoCart > form').trigger('submit');
+      
+    }
+    setTimeout(function() {$('span.cart-link').click();},1500);
   });
 
   const  addProducts=(dataSectionId,dataProductUrl,dataProductHandle,xrsUserId)=> {
