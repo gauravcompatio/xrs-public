@@ -29,9 +29,30 @@ to handle the variant change in product details page
             	$("#bundlersection").show();           
         }
       var currentprice = variant.price;
-        window.compatioConfig.compatibleProducts.methods.handleChangeProductSku(`${variant.id}`);
-        window.compatioConfig.compatibleProducts.methods.handleChangeVariantId(`${variant.id}`,variant.price/100);
+      window.compatioConfig.compatibleProducts.methods.handleChangeProductSku(variant.id);
+      window.compatioConfig.compatibleProducts.methods.handleChangeVariantId(variant.id,variant.price/100);
+      window.compatioConfig.compatibleProducts.methods.handleChangevariant(`${variant.id}`,variant.price/100,variant.title);
 
 
 
+*/
+
+
+/*
+Compatio Product Installation Snippets 
+1.) Smart Bundler :-
+TO enable bundler use this snippet <span data-xrs-smart-bundler></span> at your desired place in product-template.liquid file.
+
+2.) Smart Builder(DC) : -
+if DC is configured
+	To enable DC Anchor(widget) Link use this snippet <span data-dc-anchor class="data-dc-anchor"></span> after the add to cart button on product-template.liquid file.
+else
+	To enable XRS Anchor use this snippet <span data-xrs-anchor class="data-xrs-anchor"></span> after the add to cart button on product-template.liquid file.
+
+
+3.)Compatible with widget
+To enable xrs_compatibility_with use this snippet <span class="xrs_compatibility_with"></span> after the {{ product.title }} tag in product-template.liquid file.
+
+4.) To enable XCS, insert your addtocart button clases in below variable. this below var code present at line number 10 in our xrs-recommendations.liquid file. 
+	var addTocart = '.btn.btn--full.add-to-cart';
 */
