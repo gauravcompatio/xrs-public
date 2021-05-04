@@ -6,6 +6,7 @@
 {% assign xrsenabled = shop.metafields["global"]["XRSExtension"] %}
 <script async src="{{shop.metafields["global"]["CompatioJS"]}}"></script>
 <script>
+  var addTocart = '.btn.btn--full.add-to-cart';
   window.compatioConfig = window.compatioConfig || {};
   window.compatioConfig.gmsMap = {{shop.metafields["shop"]["gmsMap"]}}
   window.compatioConfig.compatioApiKey = {{shop.metafields["global"]["CompatioAPIKey"]}};
@@ -115,7 +116,7 @@
  );
 });
 
-  $('.btn.btn--full.add-to-cart').click(function(){
+   $(addTocart).click(function(){
 
     // getting cart details here and check if parent already present
 
